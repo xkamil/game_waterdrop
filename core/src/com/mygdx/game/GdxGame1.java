@@ -33,9 +33,13 @@ public class GdxGame1 extends ApplicationAdapter {
   private Sound dropSound;
   private OrthographicCamera camera;
 
+  private Texture backgroundImg;
+
   @Override
   public void create() {
     batch = new SpriteBatch();
+
+    backgroundImg = new Texture("background.jpg");
 
     drops = new Array<>();
     dropImg = new Texture("drop.png");
@@ -69,7 +73,7 @@ public class GdxGame1 extends ApplicationAdapter {
       if (raindrop.y + 64 < 0) {
         iter.remove();
       }
-      if(raindrop.overlaps(bucket)){
+      if (raindrop.overlaps(bucket)) {
         dropSound.play();
         iter.remove();
       }
@@ -77,6 +81,7 @@ public class GdxGame1 extends ApplicationAdapter {
 
     batch.setProjectionMatrix(camera.combined);
     batch.begin();
+    batch.draw(backgroundImg, 0, 0, 800, 480);
     batch.draw(bucketImg, bucket.x, bucket.y);
     drops.forEach(drop -> batch.draw(dropImg, drop.x, drop.y));
     batch.end();
