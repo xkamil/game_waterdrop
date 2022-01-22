@@ -2,10 +2,10 @@ package com.mygdx.game;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
@@ -16,12 +16,14 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.TimeUtils;
-import java.awt.geom.Rectangle2D;
 import java.util.Iterator;
+import java.util.stream.IntStream;
 
 public class GdxGame1 extends ApplicationAdapter {
 
   private SpriteBatch batch;
+
+  private Texture heartImg;
 
   private Texture dropImg;
   private Array<Rectangle> drops;
@@ -35,23 +37,23 @@ public class GdxGame1 extends ApplicationAdapter {
   private OrthographicCamera camera;
 
   private BitmapFont font;
-  private int dropSpeed = 200;
-
+  private int dropSpeed;
   private int score;
+  private int lives;
 
   private Texture backgroundImg;
 
   @Override
   public void create() {
+    initGame();
     batch = new SpriteBatch();
-
-    score = 0;
     font = new BitmapFont();
     font.getData().setScale(2);
 
     backgroundImg = new Texture("background.jpg");
+    heartImg = new Texture("heart.png");
 
-    drops = new Array<>();
+
     dropImg = new Texture("drop.png");
 
     bucketImg = new Texture("bucket.png");
@@ -66,13 +68,55 @@ public class GdxGame1 extends ApplicationAdapter {
 
     camera = new OrthographicCamera();
     camera.setToOrtho(false, 800, 480);
+
+    rainMusic.setLooping(true);
+    rainMusic.play();
   }
 
   @Override
   public void render() {
+    if (lives > 0) {
+      update();
+    }
+
     ScreenUtils.clear(1, 0, 0, 1);
     camera.update();
 
+    batch.setProjectionMatrix(camera.combined);
+    batch.begin();
+
+    batch.draw(backgroundImg, 0, 0, 800, 480);
+
+    IntStream.range(1, lives + 1).forEach(live -> {
+      batch.draw(heartImg, 800 - 40 * live, 480 - 32 - 10);
+    });
+
+    batch.draw(bucketImg, bucket.x, bucket.y);
+    font.draw(batch, "Score: " + score, 10, 480 - 10);
+
+    if (lives == 0) {
+      font.draw(batch, "Press ENTER to restart", 270, 240);
+
+      if (Gdx.input.isKeyPressed(Keys.ENTER)) {
+        initGame();
+      }
+    }
+
+    drops.forEach(drop -> batch.draw(dropImg, drop.x, drop.y));
+    batch.end();
+  }
+
+  @Override
+  public void dispose() {
+    batch.dispose();
+    dropImg.dispose();
+    bucketImg.dispose();
+    dropSound.dispose();
+    rainMusic.dispose();
+    batch.dispose();
+  }
+
+  private void update() {
     if (TimeUtils.nanoTime() - lastDropTime > 1000000000) {
       spawnRainDrop();
     }
@@ -81,6 +125,7 @@ public class GdxGame1 extends ApplicationAdapter {
       Rectangle raindrop = iter.next();
       raindrop.y -= dropSpeed * Gdx.graphics.getDeltaTime();
       if (raindrop.y + 64 < 0) {
+        lives--;
         iter.remove();
       }
       if (raindrop.overlaps(bucket)) {
@@ -90,17 +135,6 @@ public class GdxGame1 extends ApplicationAdapter {
         iter.remove();
       }
     }
-
-    batch.setProjectionMatrix(camera.combined);
-    batch.begin();
-    batch.draw(backgroundImg, 0, 0, 800, 480);
-    batch.draw(bucketImg, bucket.x, bucket.y);
-    font.draw(batch, "Score: " + score, 10, 480 - 10);
-    drops.forEach(drop -> batch.draw(dropImg, drop.x, drop.y));
-    batch.end();
-
-    rainMusic.setLooping(true);
-    rainMusic.play();
 
     if (Gdx.input.isTouched()) {
       Vector3 touchPos = new Vector3();
@@ -125,14 +159,11 @@ public class GdxGame1 extends ApplicationAdapter {
     }
   }
 
-  @Override
-  public void dispose() {
-    batch.dispose();
-    dropImg.dispose();
-    bucketImg.dispose();
-    dropSound.dispose();
-    rainMusic.dispose();
-    batch.dispose();
+  private void initGame() {
+    score = 0;
+    lives = 3;
+    dropSpeed = 200;
+    drops = new Array<>();
   }
 
   private void spawnRainDrop() {
