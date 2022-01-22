@@ -8,6 +8,7 @@ import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
@@ -33,11 +34,20 @@ public class GdxGame1 extends ApplicationAdapter {
   private Sound dropSound;
   private OrthographicCamera camera;
 
+  private BitmapFont font;
+  private int dropSpeed = 200;
+
+  private int score;
+
   private Texture backgroundImg;
 
   @Override
   public void create() {
     batch = new SpriteBatch();
+
+    score = 0;
+    font = new BitmapFont();
+    font.getData().setScale(2);
 
     backgroundImg = new Texture("background.jpg");
 
@@ -69,12 +79,14 @@ public class GdxGame1 extends ApplicationAdapter {
 
     for (Iterator<Rectangle> iter = drops.iterator(); iter.hasNext(); ) {
       Rectangle raindrop = iter.next();
-      raindrop.y -= 200 * Gdx.graphics.getDeltaTime();
+      raindrop.y -= dropSpeed * Gdx.graphics.getDeltaTime();
       if (raindrop.y + 64 < 0) {
         iter.remove();
       }
       if (raindrop.overlaps(bucket)) {
         dropSound.play();
+        score++;
+        dropSpeed += 10;
         iter.remove();
       }
     }
@@ -83,6 +95,7 @@ public class GdxGame1 extends ApplicationAdapter {
     batch.begin();
     batch.draw(backgroundImg, 0, 0, 800, 480);
     batch.draw(bucketImg, bucket.x, bucket.y);
+    font.draw(batch, "Score: " + score, 10, 480 - 10);
     drops.forEach(drop -> batch.draw(dropImg, drop.x, drop.y));
     batch.end();
 
