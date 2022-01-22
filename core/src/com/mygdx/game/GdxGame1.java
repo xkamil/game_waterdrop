@@ -16,6 +16,7 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.TimeUtils;
 import java.awt.geom.Rectangle2D;
+import java.util.Iterator;
 
 public class GdxGame1 extends ApplicationAdapter {
 
@@ -58,9 +59,26 @@ public class GdxGame1 extends ApplicationAdapter {
     ScreenUtils.clear(1, 0, 0, 1);
     camera.update();
 
+    if (TimeUtils.nanoTime() - lastDropTime > 1000000000) {
+      spawnRainDrop();
+    }
+
+    for (Iterator<Rectangle> iter = drops.iterator(); iter.hasNext(); ) {
+      Rectangle raindrop = iter.next();
+      raindrop.y -= 200 * Gdx.graphics.getDeltaTime();
+      if (raindrop.y + 64 < 0) {
+        iter.remove();
+      }
+      if(raindrop.overlaps(bucket)){
+        dropSound.play();
+        iter.remove();
+      }
+    }
+
     batch.setProjectionMatrix(camera.combined);
     batch.begin();
     batch.draw(bucketImg, bucket.x, bucket.y);
+    drops.forEach(drop -> batch.draw(dropImg, drop.x, drop.y));
     batch.end();
 
     rainMusic.setLooping(true);
@@ -94,11 +112,14 @@ public class GdxGame1 extends ApplicationAdapter {
     batch.dispose();
     dropImg.dispose();
     bucketImg.dispose();
+    dropSound.dispose();
+    rainMusic.dispose();
+    batch.dispose();
   }
 
-  private void spawnRainDrop(){
+  private void spawnRainDrop() {
     Rectangle raindrop = new Rectangle();
-    raindrop.x = MathUtils.random(0, 800-64);
+    raindrop.x = MathUtils.random(0, 800 - 64);
     raindrop.y = 480;
     raindrop.width = 64;
     raindrop.height = 64;
