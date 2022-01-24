@@ -72,6 +72,12 @@ task dist(dependsOn: [clean, compileGwt]) {
             from "war"
             into "build/dist"
         }
+        file("../docs").mkdirs()
+        copy {
+            from "build/dist"
+            into "../docs"
+            exclude "WEB-INF"
+        }
     }
 }
 
